@@ -11,12 +11,12 @@ To keep our implementation modular and easy to debug, the repository is split in
 ### 1. Data & Masking (`data/`) - *[PyTorch]*
 * **`dataset.py`**
   * **Core Functions:** `get_dataloader()`, `apply_sbd_masking()`
-  * Handles the data pipeline. It must implement the random noising logic to create the masked sequence `x_hat` where tokens are replaced with a `[MASK]` token based on a probability $\tau$. It is responsible for outputting the `input_ids` and the concatenated `label_ids` as shown in the paper's Code Block 7.
+  * Handles the data pipeline. Implement the random noising logic to create the masked sequence `x_hat` where tokens are replaced with a `[MASK]` token based on a probability $\tau$. It is responsible for outputting the `input_ids` and the concatenated `label_ids` as shown in the paper's Code Block 7.
 
 ### 2. Core Architecture (`models/`) - *[Hybrid]*
 * **`flex_masks.py`**
   * **Core Functions:** `create_attention_mask_train()` (Fig 9), `create_attention_mask_inference()` (Fig 10).
-  * The heart of the system. Uses PyTorch's `FlexAttention` to create the mixed causal (for past tokens) and bidirectional (for future block tokens) attention masks.
+  * Uses PyTorch's `FlexAttention` to create the mixed causal (for past tokens) and bidirectional (for future block tokens) attention masks.
 * **`modeling_sbd.py`**
   * **Core Functions:** `class SBDModelWrapper`
   * Wraps a lightweight base LLM (e.g., Qwen2.5-0.5B or Llama-3.2-1B) to inject the custom FlexAttention masks during the forward pass.
