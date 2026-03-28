@@ -1,0 +1,22 @@
+# SBD Environment Requirements
+
+# 1. Core Framework 
+# FlexAttention requires PyTorch 2.5.0 or higher.
+torch>=2.5.0
+
+# 2. HuggingFace Ecosystem
+# Used for loading the base proxy model and tokenizers
+transformers>=4.40.0
+# Used for pulling and processing the training data
+datasets>=2.18.0
+# Simplifies tensor device placement
+accelerate>=0.29.0
+
+# 3. Training & Logging Utilities
+tqdm>=4.66.0
+wandb>=0.16.0  # Weights & Biases for tracking our Loss curves
+einops>=0.7.0  # Crucial for readable tensor reshapes during KV-cache block manipulation
+
+# 4. Custom Kernel Build Tools
+# Essential for JIT compiling the custom C++/CUDA SBD kernel
+ninja>=1.11.0
