@@ -29,7 +29,7 @@ To keep our implementation modular and easy to debug, the repository is split in
   * **Core Functions:** `train_step()`, `main()`
   * **Role:** The main training loop. It handles the positional embeddings duplication (`positional_embeddings.repeat(2, 1)`), passes the data through the model, and executes the backpropagation step as outlined in Algorithm 1 (Set Block Decoding training) and Code Block 7 (Fig 7).
 
-### 4. Inference & Decoding (`inference/`) - *[Custom Systems Logic]*
+### 4. Inference & Decoding (`inference/`) - *[miniTorch]*
 * **`eb_sampler.py`**
   * **Core Functions:** `entropy_bounded_sample()`
   * **Role:** Implements the Entropy Bounded (EB) Sampler. It calculates the marginal entropy of the predicted tokens and unmasks them based on the $\gamma$ threshold (Equation 8).
