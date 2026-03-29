@@ -36,3 +36,42 @@ To keep our implementation modular and easy to debug, the repository is split in
 * **`generate.py`**
   * **Core Functions:** `generate()` (Algorithm 2 Set Block Decoding inference), `sample_block()` (Algorithm 3 Sample block).
   * The decoding loop. Manages the KV-cache updates for both causal and bidirectional tokens while generating text block by block.
+
+
+## MIDTERM REPORT TODO
+
+> Goal: baseline training + SBD training integrated + real loss curves + report
+> Total estimated: ~18-20h (buffer included)
+
+### Step 1 — Autoregressive Baseline (~4h)
+- [ ] `dataset.py`: load wikitext-2, tokenize with GPT-2 tokenizer (+ add `[MASK]` token), chunk into fixed-length sequences, return dataloader (~1.5h)
+- [ ] `train.py`: NTP training loop using `GPT2LMHeadModel` directly (no wrapper), `--mode baseline` flag, prints step/loss (~1.5h)
+- [ ] **Signal**: run 50-100 steps, confirm loss is not NaN and is decreasing (~1h, includes debug)
+
+### Step 2A — SBD Loss Path (~4h, must complete)
+- [ ] `dataset.py`: add `apply_sbd_masking()` — random mask tokens by probability τ, output `input_ids_mask` (~1h)
+- [ ] `train.py`: doubled sequence input, switch to `compute_sbd_loss()` in `--mode sbd`, log total/NTP/MATP loss separately (~2h)
+- [ ] **Signal**: run 50 steps in SBD mode, confirm all three losses are valid and not NaN (~1h, includes debug)
+
+### Step 2B — Hybrid Attention Mask (~3h, optional)
+- [ ] `modeling_sbd.py`: wrap GPT-2, inject `create_attention_mask_train()` into forward pass
+- [ ] **Stop if shape mismatch or forward crash** — do not over-invest here
+
+### Step 3 — Midterm Report (~5-6h)
+- [ ] Pipeline diagram: baseline vs SBD training flow (~1h)
+- [ ] Results: baseline vs SBD loss curves (~0.5h)
+- [ ] Method: NTP vs MATP, doubled sequence, hybrid attention (~1h)
+- [ ] Limitations: hybrid mask status, no inference yet, no MiniTorch yet (~0.5h)
+- [ ] **MiniTorch explanation**: explicitly state that PyTorch-first approach validates algorithmic correctness; MiniTorch port targets inference components (EB Sampler, KV-cache) in Week 6–7, consistent with proposal timeline (~0.5h)
+- [ ] Next steps: EB sampler, KV-cache, MiniTorch port in Week 6–7 (~0.5h)
+- [ ] Polish + submit (~1h)
+
+### Known Risks
+- **Doubled sequence length mismatch**: `input_ids` fed to model must be `2 * seq_len` in SBD mode — easy to get shape wrong
+- **`input_ids_mask` semantics**: be explicit — `True` = token is masked (replaced with `[MASK]`), `False` = token is clean
+- **Loss label alignment**: `compute_sbd_loss()` handles its own label construction — do not also construct labels in `dataset.py` or `train.py`
+
+### After Midterm
+- [ ] `eb_sampler.py`: Entropy Bounded Sampler
+- [ ] `generate.py`: SBD decoding loop with KV-cache
+- [ ] MiniTorch port (inference components)
