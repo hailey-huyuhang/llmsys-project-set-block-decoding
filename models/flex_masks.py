@@ -37,6 +37,7 @@ def create_attention_mask_inference(seq_len: int, causal_point: int):
 
 
 if __name__ == "__main__":
+    # local unit test, usage: python models/flex_masks.py
     SEQ_LEN = 16
     BLOCK_LEN = 4
     CAUSAL_POINT = 12 # from which query index to start enabling full bidirectional attention
