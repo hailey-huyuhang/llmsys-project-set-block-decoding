@@ -44,7 +44,7 @@ To keep our implementation modular and easy to debug, the repository is split in
 > Total estimated: ~18-20h (buffer included)
 
 ### Step 1 — Autoregressive Baseline (~4h)
-- [ ] `dataset.py`: load wikitext-2, tokenize with GPT-2 tokenizer (+ add `[MASK]` token), chunk into fixed-length sequences, return dataloader (~1.5h)
+- [x] `dataset.py`: load wikitext-2, tokenize with GPT-2 tokenizer (+ add `[MASK]` token), chunk into fixed-length sequences, return dataloader (~1.5h)
 - [ ] `train.py`: NTP training loop using `GPT2LMHeadModel` directly (no wrapper), `--mode baseline` flag, prints step/loss (~1.5h)
 - [ ] **Signal**: run 50-100 steps, confirm loss is not NaN and is decreasing (~1h, includes debug)
 
