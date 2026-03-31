@@ -2,6 +2,9 @@ import torch
 from torch.nn.attention.flex_attention import create_block_mask
 
 def create_attention_mask_train(seq_len: int, block_len: int):
+    """
+    Flex attention version, same with paper
+    """
     half_seq_len = seq_len // 2
 
     def mask_mod(b, h, q_idx, kv_idx):
@@ -24,6 +27,9 @@ def create_attention_mask_train(seq_len: int, block_len: int):
     return create_block_mask(mask_mod, B=None, H=None, Q_LEN=seq_len, KV_LEN=seq_len)
 
 def create_attention_mask_inference(seq_len: int, causal_point: int):
+    """
+    Flex attention version, same with paper
+    """
     def mask_mod(b, h, q_idx, kv_idx):
         # Standard causal masking
         is_causal = kv_idx <= q_idx
@@ -35,9 +41,37 @@ def create_attention_mask_inference(seq_len: int, causal_point: int):
 
     return create_block_mask(mask_mod, B=None, H=None, Q_LEN=seq_len, KV_LEN=seq_len)
 
+def build_sbd_train_mask_dense(seq_len: int, block_len: int, device: torch.device):
+    """
+    Dense 4D attention mask for HF GPT-2.
+    Shape: (1, 1, 2*seq_len, 2*seq_len)
+    0.0 = attend, -inf = blocked
+    """
+    total = 2 * seq_len
+    q = torch.arange(total, device=device).unsqueeze(1)   # (2T, 1)
+    kv = torch.arange(total, device=device).unsqueeze(0)  # (1, 2T)
+
+    # Top-left: standard causal
+    top_left = (q < seq_len) & (kv < seq_len) & (kv <= q)
+
+    # Bottom-right: bidirectional within same block
+    q_block_br = (q - seq_len) // block_len
+    kv_block_br = (kv - seq_len) // block_len
+    bottom_right = (q >= seq_len) & (kv >= seq_len) & (q_block_br == kv_block_br)
+
+    # Bottom-left: block sees past blocks only
+    q_block_bl = (q - seq_len) // block_len
+    kv_block_bl = kv // block_len
+    bottom_left = (q >= seq_len) & (kv < seq_len) & (q_block_bl > kv_block_bl)
+
+    attend = top_left | bottom_right | bottom_left
+    mask = torch.where(attend, 0.0, float("-inf"))
+
+    return mask.unsqueeze(0).unsqueeze(0)  # (1, 1, 2T, 2T)
+
 
 if __name__ == "__main__":
-    # local unit test, usage: python models/flex_masks.py
+    # local unit test, usage: python models/flex_masks.py, wait 30-40s
     SEQ_LEN = 16
     BLOCK_LEN = 4
     CAUSAL_POINT = 12 # from which query index to start enabling full bidirectional attention
@@ -73,3 +107,9 @@ if __name__ == "__main__":
     
     for row in dense_infer:
         print(" ".join(["1" if val.item() else "." for val in row]))
+
+    print("\n--- Dense Train Mask ---") # for HF GPT-2
+    dense_mask = build_sbd_train_mask_dense(seq_len=8, block_len=4, device=torch.device("cpu"))
+    m = dense_mask.squeeze()
+    for row in m:
+        print(" ".join(["1" if v == 0.0 else "." for v in row]))

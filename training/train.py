@@ -18,7 +18,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from data.dataset import get_tokenizer, get_dataloader, apply_sbd_masking
 from training.loss import compute_sbd_loss
-
+from models.flex_masks import build_sbd_train_mask_dense
 
 def train_step_baseline(model, batch, device):
     """
@@ -44,6 +44,7 @@ def train_step_sbd(model, batch, mask_token_id, block_len, device):
     return total_loss, ntp_loss, matp_loss
     """
     input_ids = batch[0].to(device)  # (B, T)
+    T = input_ids.shape[1]
  
     # Mask random tokens for MATP
     masked_input, input_ids_mask = apply_sbd_masking(input_ids, mask_token_id)
@@ -54,10 +55,11 @@ def train_step_sbd(model, batch, mask_token_id, block_len, device):
     # doubled_input: (B, 2T) [x1, x2, x3, x4, x5, x6, x7, x8 | x1, <m>, x3, <m>, <m>, x6, <m>, x8]
     doubled_input = torch.cat([input_ids, masked_input], dim=1)  # (B, 2T)
  
-    # Forward pass
-    logits = model(doubled_input).logits  # (B, 2T, V)
- 
-    # Unified loss (Eq 14)
+    # Dense 4D mask for HF GPT-2
+    attn_mask = build_sbd_train_mask_dense(T, block_len, device)
+
+    logits = model(doubled_input, attention_mask=attn_mask).logits
+
     total_loss, ntp_loss, matp_loss = compute_sbd_loss(
         logits, input_ids, input_ids_mask, block_len
     )
@@ -108,6 +110,7 @@ def main(args):
     print("Training finished.")
 
 if __name__ == "__main__":
+    # usage: python training/train.py --mode sbd --steps 50
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", type=str, choices=["baseline", "sbd"], default="baseline")
     parser.add_argument("--seq_len", type=int, default=128)

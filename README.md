@@ -15,11 +15,12 @@ To keep our implementation modular and easy to debug, the repository is split in
 
 ### 2. Core Architecture (`models/`) - *[Hybrid]*
 * **`flex_masks.py`**
-  * **Core Functions:** `create_attention_mask_train()` (Fig 9), `create_attention_mask_inference()` (Fig 10).
+  * **Core Functions:** `build_sbd_train_mask_dense()`, `create_attention_mask_train()` (Fig 9), `create_attention_mask_inference()` (Fig 10).
   * Uses PyTorch's `FlexAttention` to create the mixed causal (for past tokens) and bidirectional (for future block tokens) attention masks.
-* **`modeling_sbd.py`**
+  * Builds attention masks for SBD training and inference. Dense 4D mask is passed directly to HF GPT-2 via attention_mask parameter.
+<!-- * **`modeling_sbd.py`**
   * **Core Functions:** `class SBDModelWrapper`
-  * Wraps a lightweight base LLM (e.g., Qwen2.5-0.5B or Llama-3.2-1B) to inject the custom FlexAttention masks during the forward pass.
+  * Wraps a lightweight base LLM (e.g., Qwen2.5-0.5B or Llama-3.2-1B) to inject the custom FlexAttention masks during the forward pass. -->
 
 ### 3. Training & Loss (`training/`) - *[PyTorch]*
 * **`loss.py`**
@@ -54,8 +55,10 @@ To keep our implementation modular and easy to debug, the repository is split in
 - [x] **Signal**: run 50 steps in SBD mode, confirm all three losses are valid and not NaN (~1h, includes debug)
 
 ### Step 2B — Hybrid Attention Mask (~3h, optional)
-- [ ] `modeling_sbd.py`: wrap GPT-2, inject `create_attention_mask_train()` into forward pass
-- [ ] **Stop if shape mismatch or forward crash** — do not over-invest here
+<!-- - [ ] `modeling_sbd.py`: wrap GPT-2, inject `create_attention_mask_train()` into forward pass -->
+- [x] `flex_masks.py`: added `build_sbd_train_mask_dense()`, dense 4D mask for HF GPT-2, passed via attention_mask in train_step_sbd()
+- [x] **Signal**: run 50 steps in SBD mode, confirm all three losses are valid and not NaN (~1h)
+<!-- - [ ] **Stop if shape mismatch or forward crash** — do not over-invest here -->
 
 ### Step 3 — Midterm Report (~5-6h)
 - [ ] Pipeline diagram: baseline vs SBD training flow (~1h)
