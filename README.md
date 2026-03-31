@@ -45,13 +45,13 @@ To keep our implementation modular and easy to debug, the repository is split in
 
 ### Step 1 — Autoregressive Baseline (~4h)
 - [x] `dataset.py`: load wikitext-2, tokenize with GPT-2 tokenizer (+ add `[MASK]` token), chunk into fixed-length sequences, return dataloader (~1.5h)
-- [ ] `train.py`: NTP training loop using `GPT2LMHeadModel` directly (no wrapper), `--mode baseline` flag, prints step/loss (~1.5h)
-- [ ] **Signal**: run 50-100 steps, confirm loss is not NaN and is decreasing (~1h, includes debug)
+- [x] `train.py`: NTP training loop using `GPT2LMHeadModel` directly (no wrapper), `--mode baseline` flag, prints step/loss (~1.5h)
+- [x] **Signal**: run 50-100 steps, confirm loss is not NaN and is decreasing (~1h, includes debug)
 
 ### Step 2A — SBD Loss Path (~4h, must complete)
-- [ ] `dataset.py`: add `apply_sbd_masking()` — random mask tokens by probability τ, output `input_ids_mask` (~1h)
-- [ ] `train.py`: doubled sequence input, switch to `compute_sbd_loss()` in `--mode sbd`, log total/NTP/MATP loss separately (~2h)
-- [ ] **Signal**: run 50 steps in SBD mode, confirm all three losses are valid and not NaN (~1h, includes debug)
+- [x] `dataset.py`: add `apply_sbd_masking()` — random mask tokens by probability τ, output `input_ids_mask` (~1h)
+- [x] `train.py`: doubled sequence input, switch to `compute_sbd_loss()` in `--mode sbd`, log total/NTP/MATP loss separately (~2h)
+- [x] **Signal**: run 50 steps in SBD mode, confirm all three losses are valid and not NaN (~1h, includes debug)
 
 ### Step 2B — Hybrid Attention Mask (~3h, optional)
 - [ ] `modeling_sbd.py`: wrap GPT-2, inject `create_attention_mask_train()` into forward pass
