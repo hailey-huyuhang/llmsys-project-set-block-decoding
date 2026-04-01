@@ -20,6 +20,8 @@ from data.dataset import get_tokenizer, get_dataloader, apply_sbd_masking
 from training.loss import compute_sbd_loss
 from models.flex_masks import build_sbd_train_mask_dense
 
+import wandb
+
 def train_step_baseline(model, batch, device):
     """
     One NTP training step. Returns loss.
@@ -83,6 +85,8 @@ def main(args):
  
     dl = get_dataloader("train", tokenizer, seq_len=args.seq_len, batch_size=args.batch_size)
     optimizer = AdamW(model.parameters(), lr=args.lr)
+    
+    wandb.init(project="sbd", config=vars(args), name=f"{args.mode}_{args.steps}steps")
  
     for step, batch in enumerate(dl):
         if step >= args.steps:
@@ -94,6 +98,7 @@ def main(args):
             loss = train_step_baseline(model, batch, device)
             loss.backward()
             print(f"Step {step:4d} | loss: {loss.item():.4f}")
+            wandb.log({"ntp_loss": loss.item()}, step=step)
  
         elif args.mode == "sbd":
             total_loss, ntp_loss, matp_loss = train_step_sbd(
@@ -104,6 +109,11 @@ def main(args):
                 f"Step {step:4d} | total: {total_loss.item():.4f}  "
                 f"ntp: {ntp_loss.item():.4f}  matp: {matp_loss.item():.4f}"
             )
+            wandb.log({
+                "total_loss": total_loss.item(),
+                "ntp_loss": ntp_loss.item(),
+                "matp_loss": matp_loss.item(),
+            }, step=step)
  
         optimizer.step()
  
