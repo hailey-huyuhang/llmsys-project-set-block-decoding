@@ -52,29 +52,55 @@ To keep our implementation modular and easy to debug, the repository is split in
 ### Step 2A — SBD Loss Path (~4h, must complete)
 - [x] `dataset.py`: add `apply_sbd_masking()` — random mask tokens by probability τ, output `input_ids_mask` (~1h)
 - [x] `train.py`: doubled sequence input, switch to `compute_sbd_loss()` in `--mode sbd`, log total/NTP/MATP loss separately (~2h)
-- [x] **Signal**: run 50 steps in SBD mode, confirm all three losses are valid and not NaN (~1h, includes debug)
+- [x] **Signal**: run 500 steps in SBD mode, confirm all three losses are valid and not NaN (~1h, includes debug)
 
 ### Step 2B — Hybrid Attention Mask (~3h, optional)
 <!-- - [ ] `modeling_sbd.py`: wrap GPT-2, inject `create_attention_mask_train()` into forward pass -->
 - [x] `flex_masks.py`: added `build_sbd_train_mask_dense()`, dense 4D mask for HF GPT-2, passed via attention_mask in train_step_sbd()
-- [x] **Signal**: run 50 steps in SBD mode, confirm all three losses are valid and not NaN (~1h)
+- [x] **Signal**: run 500 steps in SBD mode, confirm all three losses are valid and not NaN (~1h)
 <!-- - [ ] **Stop if shape mismatch or forward crash** — do not over-invest here -->
 
-### Step 3 — Midterm Report (~5-6h)
+<!-- ### Step 3 — Midterm Report (~5-6h)
 - [ ] Pipeline diagram: baseline vs SBD training flow (~1h)
 - [ ] Results: baseline vs SBD loss curves (~0.5h)
 - [ ] Method: NTP vs MATP, doubled sequence, hybrid attention (~1h)
 - [ ] Limitations: hybrid mask status, no inference yet, no MiniTorch yet (~0.5h)
 - [ ] **MiniTorch explanation**: explicitly state that PyTorch-first approach validates algorithmic correctness; MiniTorch port targets inference components (EB Sampler, KV-cache) in Week 6–7, consistent with proposal timeline (~0.5h)
 - [ ] Next steps: EB sampler, KV-cache, MiniTorch port in Week 6–7 (~0.5h)
-- [ ] Polish + submit (~1h)
+- [ ] Polish + submit (~1h) -->
 
-### Known Risks
+### Risks
 - **Doubled sequence length mismatch**: `input_ids` fed to model must be `2 * seq_len` in SBD mode — easy to get shape wrong
 - **`input_ids_mask` semantics**: be explicit — `True` = token is masked (replaced with `[MASK]`), `False` = token is clean
 - **Loss label alignment**: `compute_sbd_loss()` handles its own label construction — do not also construct labels in `dataset.py` or `train.py`
 
-### After Midterm
+<!-- ### After Midterm
 - [ ] `eb_sampler.py`: Entropy Bounded Sampler
 - [ ] `generate.py`: SBD decoding loop with KV-cache
-- [ ] MiniTorch port (inference components)
+- [ ] MiniTorch port (inference components) -->
+
+### Step 3 — Training Fixes & Longer Run (~3h)
+- [x] Fix position embeddings: add `position_ids = torch.arange(T).repeat(1,2)` in `train_step_sbd()` (~15min)
+- [ ] Re-run SBD training for 2000+ steps with position fix, compare MATP convergence speed vs old run (~2h including GPU wait)
+- [ ] **Signal**: MATP loss drops below 5.0 (currently 5.61 at 500 steps)
+
+### Step 4 — Inference: Dense Mask + Greedy Baseline (~4h)
+- [ ] `flex_masks.py`: add `build_sbd_inference_mask_dense()` for inference (~30min)
+- [ ] `generate.py`: simple greedy SBD decoding loop — fill block with <m>, run forward, accept all predictions, no EB-Sampler yet (~3h)
+- [ ] **Signal**: model generates readable text, even if quality is low
+
+### Step 5 — EB-Sampler (~5h)
+- [ ] `eb_sampler.py`: implement Algorithm 3 — sort masked positions by entropy, unmask low-entropy tokens, iterate until block fully decoded (~3h)
+- [ ] Add gamma threshold parameter to control speed-accuracy tradeoff (~30min)
+- [ ] `generate.py`: integrate EB-Sampler into decoding loop, measure NFE per generated token (~1.5h)
+- [ ] **Signal**: NFE < k per block on average
+
+### Step 6 — Evaluation & Benchmarking (~3h)
+- [ ] Compare generated text quality: baseline NTP vs SBD greedy vs SBD EB-Sampler (~1h)
+- [ ] Measure NFE speedup at different gamma values (0.1, 0.35, 0.6) (~1h)
+- [ ] Measure wall-clock time: SBD vs baseline on same generation length (~1h)
+- [ ] **Signal**: NFE reduction of 2-3x with comparable text quality
+
+### Step 7 — MiniTorch Port (~6h+)
+- [ ] Port inference-only components to MiniTorch (~4h)
+- [ ] Benchmark on MiniTorch vs PyTorch reference (~2h)

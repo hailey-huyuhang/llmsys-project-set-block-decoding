@@ -56,6 +56,12 @@ def train_step_sbd(model, batch, mask_token_id, block_len, device):
     # masked_input:  (B, T)  [x1, <m>, x3, <m>, <m>, x6, <m>, x8]
     # doubled_input: (B, 2T) [x1, x2, x3, x4, x5, x6, x7, x8 | x1, <m>, x3, <m>, <m>, x6, <m>, x8]
     doubled_input = torch.cat([input_ids, masked_input], dim=1)  # (B, 2T)
+
+    # position_ids
+    pos = torch.arange(T, device=device).unsqueeze(0)  # (1, T)
+    position_ids = pos.repeat(1, 2)  # (1, 2T): [0..T-1 | 0..T-1]
+
+    logits = model(doubled_input, attention_mask=attn_mask, position_ids=position_ids).logits
  
     # Dense 4D mask for HF GPT-2
     attn_mask = build_sbd_train_mask_dense(T, block_len, device)
