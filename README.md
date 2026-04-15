@@ -113,8 +113,8 @@ To keep our implementation modular and easy to debug, the repository is split in
 
 ### Step 3 — Training Fixes and Longer Run (~3h)
 - [x] Fix position embeddings by setting `position_ids = torch.arange(T).repeat(1, 2)` in `train_step_sbd()` so both halves of the doubled input share the same indices 0 to T-1 (~15min)
-- [ ] Re-run SBD training for 2000+ steps with the position fix applied and compare MATP convergence against the old run (~2h including GPU wait)
-- [ ] **Signal**: MATP loss drops below 5.0 (currently 5.61 at 500 steps)
+- [x] Re-run SBD training for 2000+ steps with the position fix applied and compare MATP convergence against the old run (~2h including GPU wait)
+- [x] **Signal**: MATP loss drops below 5.0
 
 ### Step 4 — MiniTorch Model Modification (~2h)
 - [ ] Add an optional `mask` parameter to `MultiHeadAttention.self_attention`, `MultiHeadAttention.forward`, `TransformerLayer.forward`, and `DecoderLM.forward` in `modules_transfomer.py` so an external SBD attention mask can be injected at inference time (~1h)
