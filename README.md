@@ -4,16 +4,36 @@ Welcome to our reproduction repository for the paper: **[Set Block Decoding is a
 
 This project aims to implement a miniTorch version of the SBD methodology. SBD is a decoding paradigm that enables parallel sampling of non-contiguous future token blocks without altering the underlying Transformer architecture. By using a hybrid attention mechanism—causal for historical tokens and bidirectional for the future block—the model can predict multiple future tokens simultaneously.
 
-## Project Structure & Function Mapping
+The project is split into two stages. Training runs in PyTorch on top of GPT-2, and inference runs in MiniTorch, the custom framework built throughout the course. The final benchmark compares standard NTP decoding against SBD decoding, both running inside MiniTorch, measuring NFE reduction and wall-clock speedup.
 
+## Project Structure
 To keep our implementation modular and easy to debug, the repository is split into four core components: Data, Models, Training, and Inference.
+ 
+```
+.
+├── data/
+│   └── dataset.py
+├── models/
+│   └── flex_masks.py
+├── training/
+│   ├── loss.py
+│   └── train.py
+├── inference/
+│   ├── sbd_mask.py
+│   ├── eb_sampler.py
+│   └── generate.py
+├── minitorch/
+└── benchmark_sbd.py
+```
+
+## Component Details
 
 ### 1. Data & Masking (`data/`) - *[PyTorch]*
 * **`dataset.py`**
   * **Core Functions:** `get_dataloader()`, `apply_sbd_masking()`
   * Handles the data pipeline. Implement the random noising logic to create the masked sequence `x_hat` where tokens are replaced with a `[MASK]` token based on a probability $\tau$. It is responsible for outputting the `input_ids` and the concatenated `label_ids` as shown in the paper's Code Block 7.
 
-### 2. Core Architecture (`models/`) - *[Hybrid]*
+### 2. Core Architecture (`models/`) - *[PyTorch]*
 * **`flex_masks.py`**
   * **Core Functions:** `build_sbd_train_mask_dense()`, `create_attention_mask_train()` (Fig 9), `create_attention_mask_inference()` (Fig 10).
   * Uses PyTorch's `FlexAttention` to create the mixed causal (for past tokens) and bidirectional (for future block tokens) attention masks.
@@ -37,9 +57,21 @@ To keep our implementation modular and easy to debug, the repository is split in
 * **`generate.py`**
   * **Core Functions:** `generate()` (Algorithm 2 Set Block Decoding inference), `sample_block()` (Algorithm 3 Sample block).
   * The decoding loop. Manages the KV-cache updates for both causal and bidirectional tokens while generating text block by block.
+* **`sbd_mask.py`**
+  * **Core Functions:** `build_sbd_inference_mask()`
+  * Builds the 4D attention mask used during block decoding at inference time. Tokens up to `causal_point` attend causally. Tokens from `causal_point` onward form the current prediction block and attend to all positions, following Figure 10 of the paper. Output is a MiniTorch tensor compatible with the modified `DecoderLM.forward()`.
+
+### 5. MiniTorch Model (`minitorch/`) - *[miniTorch]*
+* **`modules_transfomer.py`**
+  * **Modified Functions:** `MultiHeadAttention.self_attention()`, `MultiHeadAttention.forward()`, `TransformerLayer.forward()`, `DecoderLM.forward()`
+  * Adds an optional `mask` parameter to the four functions above so that an externally constructed SBD attention mask can be passed in at inference time. When `mask` is `None` the behaviour is identical to the original implementation.
+
+### 6. Benchmark (`benchmark_sbd.py`) - *[miniTorch]*
+* **Core Functions:** `run_benchmark()`
+* Runs `generate_ntp()` and `generate_sbd()` on the same MiniTorch model and the same prompt set, then reports NFE per generated token, NFE speedup, wall-clock time per token, and wall-clock speedup. Results are collected across $\gamma$ values of 0.1, 0.35, and 0.6 to reproduce the speed-accuracy tradeoff shown in Figure 1 of the paper.
 
 
-## MIDTERM REPORT TODO
+## TODO
 
 > Goal: baseline training + SBD training integrated + real loss curves + report
 > Total estimated: ~18-20h (buffer included)
@@ -79,28 +111,28 @@ To keep our implementation modular and easy to debug, the repository is split in
 - [ ] `generate.py`: SBD decoding loop with KV-cache
 - [ ] MiniTorch port (inference components) -->
 
-### Step 3 — Training Fixes & Longer Run (~3h)
-- [x] Fix position embeddings: add `position_ids = torch.arange(T).repeat(1,2)` in `train_step_sbd()` (~15min)
-- [ ] Re-run SBD training for 2000+ steps with position fix, compare MATP convergence speed vs old run (~2h including GPU wait)
+### Step 3 — Training Fixes and Longer Run (~3h)
+- [x] Fix position embeddings by setting `position_ids = torch.arange(T).repeat(1, 2)` in `train_step_sbd()` so both halves of the doubled input share the same indices 0 to T-1 (~15min)
+- [ ] Re-run SBD training for 2000+ steps with the position fix applied and compare MATP convergence against the old run (~2h including GPU wait)
 - [ ] **Signal**: MATP loss drops below 5.0 (currently 5.61 at 500 steps)
 
-### Step 4 — Inference: Dense Mask + Greedy Baseline (~4h)
-- [ ] `flex_masks.py`: add `build_sbd_inference_mask_dense()` for inference (~30min)
-- [ ] `generate.py`: simple greedy SBD decoding loop — fill block with <m>, run forward, accept all predictions, no EB-Sampler yet (~3h)
-- [ ] **Signal**: model generates readable text, even if quality is low
+### Step 4 — MiniTorch Model Modification (~2h)
+- [ ] Add an optional `mask` parameter to `MultiHeadAttention.self_attention`, `MultiHeadAttention.forward`, `TransformerLayer.forward`, and `DecoderLM.forward` in `modules_transfomer.py` so an external SBD attention mask can be injected at inference time (~1h)
+- [ ] Verify that calling these functions without a mask argument produces bit-identical outputs to the original implementation (~1h)
+- [ ] **Signal**: the existing machine translation training run completes with no change in loss
 
-### Step 5 — EB-Sampler (~5h)
-- [ ] `eb_sampler.py`: implement Algorithm 3 — sort masked positions by entropy, unmask low-entropy tokens, iterate until block fully decoded (~3h)
-- [ ] Add gamma threshold parameter to control speed-accuracy tradeoff (~30min)
-- [ ] `generate.py`: integrate EB-Sampler into decoding loop, measure NFE per generated token (~1.5h)
-- [ ] **Signal**: NFE < k per block on average
+### Step 5 — MiniTorch Inference Components (~5h)
+- [ ] In `inference/sbd_mask.py`, implement `build_sbd_inference_mask` to produce a 4D MiniTorch attention mask where positions before `causal_point` attend causally and positions in the prediction block attend to all positions (~1h)
+- [ ] In `inference/eb_sampler.py`, implement `entropy_bounded_sample` to compute per-position entropy for all currently masked positions, sort them in ascending order, and unmask the largest group whose cumulative entropy stays within the γ threshold. At least one token must be revealed per call (~2h)
+- [ ] In `inference/generate.py`, implement `generate_ntp` for standard one-token-at-a-time decoding, `generate_sbd` for the outer block-level loop, and `sample_block` for the inner unmasking loop. Track the number of forward passes per block for NFE reporting (~2h)
+- [ ] **Signal**: `generate_ntp` produces readable text and average NFE per block in `generate_sbd` is less than `block_size`
 
-### Step 6 — Evaluation & Benchmarking (~3h)
-- [ ] Compare generated text quality: baseline NTP vs SBD greedy vs SBD EB-Sampler (~1h)
-- [ ] Measure NFE speedup at different gamma values (0.1, 0.35, 0.6) (~1h)
-- [ ] Measure wall-clock time: SBD vs baseline on same generation length (~1h)
-- [ ] **Signal**: NFE reduction of 2-3x with comparable text quality
+### Step 6 — Benchmark (~3h)
+- [ ] In `benchmark_sbd.py`, implement `run_benchmark` to run `generate_ntp` and `generate_sbd` on the same model and the same set of prompts. Collect NFE speedup and wall-clock speedup at γ values of 0.1, 0.35, and 0.6 (~2h)
+- [ ] Compare results against the Roofline analysis in Table 3 and Table 4 of the paper (~1h)
+- [ ] **Signal**: NFE reduction of 2x or more at γ = 0.35 with no significant drop in output quality
 
-### Step 7 — MiniTorch Port (~6h+)
-- [ ] Port inference-only components to MiniTorch (~4h)
-- [ ] Benchmark on MiniTorch vs PyTorch reference (~2h)
+### Risks
+- **Regression in `modules_transfomer.py`**: confirm the modified file is numerically identical to the original when no mask is passed before moving on to inference work
+- **Missing MiniTorch ops**: `entropy_bounded_sample` may rely on operations not available in MiniTorch; use numpy for entropy computation as a fallback if needed
+- **NFE vs wall-clock gap**: without KV-cache, wall-clock speedup will be smaller than NFE speedup; report both metrics and compare against the paper's Roofline bounds
