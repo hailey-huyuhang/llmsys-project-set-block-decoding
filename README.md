@@ -122,14 +122,14 @@ To keep our implementation modular and easy to debug, the repository is split in
 - [ ] **Signal**: the existing machine translation training run completes with no change in loss
 
 ### Step 5 — MiniTorch Inference Components (~5h)
-- [ ] In `inference/sbd_mask.py`, implement `build_sbd_inference_mask` to produce a 4D MiniTorch attention mask where positions before `causal_point` attend causally and positions in the prediction block attend to all positions (~1h)
-- [ ] In `inference/eb_sampler.py`, implement `entropy_bounded_sample` to compute per-position entropy for all currently masked positions, sort them in ascending order, and unmask the largest group whose cumulative entropy stays within the γ threshold. At least one token must be revealed per call (~2h)
-- [ ] In `inference/generate.py`, implement `generate_ntp` for standard one-token-at-a-time decoding, `generate_sbd` for the outer block-level loop, and `sample_block` for the inner unmasking loop. Track the number of forward passes per block for NFE reporting (~2h)
+- [ ] `inference/sbd_mask.py`: implement `build_sbd_inference_mask` — positions before `causal_point` attend causally, positions in the prediction block attend to all positions, output as a 4D MiniTorch tensor (~1h)
+- [ ] `inference/eb_sampler.py`: implement `entropy_bounded_sample` — compute per-position entropy for all masked positions, sort ascending, unmask the largest group whose cumulative entropy stays within γ, guarantee at least one token revealed per call (~2h)
+- [ ] `inference/generate.py`: implement `generate_ntp` for one-token-at-a-time decoding, `generate_sbd` for the outer block-level loop, and `sample_block` for the inner unmasking loop, tracking forward pass count per block for NFE reporting (~2h)
 - [ ] **Signal**: `generate_ntp` produces readable text and average NFE per block in `generate_sbd` is less than `block_size`
 
 ### Step 6 — Benchmark (~3h)
-- [ ] In `benchmark_sbd.py`, implement `run_benchmark` to run `generate_ntp` and `generate_sbd` on the same model and the same set of prompts. Collect NFE speedup and wall-clock speedup at γ values of 0.1, 0.35, and 0.6 (~2h)
-- [ ] Compare results against the Roofline analysis in Table 3 and Table 4 of the paper (~1h)
+- [ ] `benchmark_sbd.py`: implement `run_benchmark` — run `generate_ntp` and `generate_sbd` on the same model and prompt set, collect NFE speedup and wall-clock speedup at γ = 0.1, 0.35, and 0.6 (~2h)
+- [ ] Compare collected results against the Roofline analysis in Table 3 and Table 4 of the paper (~1h)
 - [ ] **Signal**: NFE reduction of 2x or more at γ = 0.35 with no significant drop in output quality
 
 ### Risks
