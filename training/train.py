@@ -91,36 +91,42 @@ def main(args):
     optimizer = AdamW(model.parameters(), lr=args.lr)
     
     wandb.init(project="sbd", config=vars(args), name=f"{args.mode}_{args.steps}steps")
+
+    step = 0
+
+    while step < args.steps:
+        for batch in dl:
+            if step >= args.steps:
+                break
+            optimizer.zero_grad()
+
+            step += 1
  
-    for step, batch in enumerate(dl):
-        if step >= args.steps:
-            break
- 
-        optimizer.zero_grad()
- 
-        if args.mode == "baseline":
-            loss = train_step_baseline(model, batch, device)
-            loss.backward()
-            print(f"Step {step:4d} | loss: {loss.item():.4f}")
-            wandb.log({"ntp_loss": loss.item()}, step=step)
- 
-        elif args.mode == "sbd":
-            total_loss, ntp_loss, matp_loss = train_step_sbd(
-                model, batch, mask_token_id, args.block_len, device
-            )
-            total_loss.backward()
-            print(
-                f"Step {step:4d} | total: {total_loss.item():.4f}  "
-                f"ntp: {ntp_loss.item():.4f}  matp: {matp_loss.item():.4f}"
-            )
-            wandb.log({
-                "total_loss": total_loss.item(),
-                "ntp_loss": ntp_loss.item(),
-                "matp_loss": matp_loss.item(),
-            }, step=step)
- 
-        optimizer.step()
- 
+            if args.mode == "baseline":
+                loss = train_step_baseline(model, batch, device)
+                loss.backward()
+                print(f"Step {step:4d} | loss: {loss.item():.4f}")
+                wandb.log({"ntp_loss": loss.item()}, step=step)
+    
+            elif args.mode == "sbd":
+                total_loss, ntp_loss, matp_loss = train_step_sbd(
+                    model, batch, mask_token_id, args.block_len, device
+                )
+                total_loss.backward()
+                print(
+                    f"Step {step:4d} | total: {total_loss.item():.4f}  "
+                    f"ntp: {ntp_loss.item():.4f}  matp: {matp_loss.item():.4f}"
+                )
+                wandb.log({
+                    "total_loss": total_loss.item(),
+                    "ntp_loss": ntp_loss.item(),
+                    "matp_loss": matp_loss.item(),
+                }, step=step)
+    
+            optimizer.step()
+
+    os.makedirs("checkpoints", exist_ok=True)
+    torch.save(model.state_dict(), f"checkpoints/sbd_{step}steps.pt")
     print("Training finished.")
 
 if __name__ == "__main__":
