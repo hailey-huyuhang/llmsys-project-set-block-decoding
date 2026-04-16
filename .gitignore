@@ -1,2 +1,4 @@
 sbd_env/
 wandb/
+checkpoints/
+*.log
