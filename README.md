@@ -6,6 +6,44 @@ This project aims to implement a miniTorch version of the SBD methodology. SBD i
 
 The project is split into two stages. Training runs in PyTorch on top of GPT-2, and inference runs in MiniTorch, the custom framework built throughout the course. The final benchmark compares standard NTP decoding against SBD decoding, both running inside MiniTorch, measuring NFE reduction and wall-clock speedup.
 
+## Setup
+
+```bash
+# Request a GPU node first (on Bridges2)
+interact --partition GPU-shared --gres=gpu:1
+
+# Set up environment
+export UV_CACHE_DIR=$PROJECT/$(whoami)/.cache/uv
+module load cuda/12.4.0
+
+# Create and activate virtual environment
+uv venv --python=3.12
+source .venv/bin/activate
+
+# Install dependencies
+uv pip install -r requirements.txt
+```
+
+## Running
+
+```bash
+# Baseline NTP training
+python training/train.py --mode baseline --steps 100
+
+# SBD training
+python training/train.py --mode sbd --steps 2000 --block_len 4
+
+# Benchmark
+python benchmark_sbd.py
+```
+
+Key arguments for `train.py`:
+- `--mode`: `baseline` or `sbd`
+- `--steps`: number of training steps
+- `--seq_len`: sequence length (default: 128)
+- `--batch_size`: batch size (default: 8)
+- `--block_len`: SBD block size (default: 4)
+
 ## Project Structure
 To keep our implementation modular and easy to debug, the repository is split into four core components: Data, Models, Training, and Inference.
  

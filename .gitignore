@@ -1,4 +1,8 @@
 sbd_env/
+.venv/
 wandb/
 checkpoints/
 *.log
+uv.toml
+__pycache__/
+*.pyc
