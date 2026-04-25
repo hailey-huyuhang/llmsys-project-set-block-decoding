@@ -6,3 +6,6 @@ checkpoints/
 uv.toml
 __pycache__/
 *.pyc
+*.so
+minitorch.egg-info/
+workdir_*/

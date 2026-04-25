@@ -20,3 +20,8 @@ einops>=0.7.0  # Crucial for readable tensor reshapes during KV-cache block mani
 # 4. Custom Kernel Build Tools
 # Essential for JIT compiling the custom C++/CUDA SBD kernel
 ninja>=1.11.0
+
+# 5. MiniTorch Validation
+fire>=0.6.0      # used by project/run_machine_translation.py
+sacrebleu>=2.3.0 # used by project/run_machine_translation.py for BLEU score
+tokenizers>=0.15.0

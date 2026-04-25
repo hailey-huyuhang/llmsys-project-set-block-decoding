@@ -7,21 +7,45 @@ This project aims to implement a miniTorch version of the SBD methodology. SBD i
 The project is split into two stages. Training runs in PyTorch on top of GPT-2, and inference runs in MiniTorch, the custom framework built throughout the course. The final benchmark compares standard NTP decoding against SBD decoding, both running inside MiniTorch, measuring NFE reduction and wall-clock speedup.
 
 ## Setup
-
+ 
+### 1. Clone the repository
+ 
 ```bash
-# Request a GPU node first (on Bridges2)
-interact --partition GPU-shared --gres=gpu:1
-
-# Set up environment
-export UV_CACHE_DIR=$PROJECT/$(whoami)/.cache/uv
-module load cuda/12.4.0
-
-# Create and activate virtual environment
-uv venv --python=3.12
-source .venv/bin/activate
-
-# Install dependencies
-uv pip install -r requirements.txt
+git clone https://github.com/hailey-huyuhang/llmsys-project-set-block-decoding.git
+cd llmsys-project-set-block-decoding
+```
+ 
+### 2. Create and activate the environment
+ 
+```bash
+conda create -p ./sbd_env python=3.12
+conda activate ./sbd_env
+pip install -r requirements.txt
+```
+ 
+### 3. Install the project as a package
+ 
+```bash
+pip install -e .
+```
+ 
+### 4. Compile CUDA kernels
+ 
+```bash
+module load cuda/12.4
+bash compile_cuda.sh
+```
+ 
+### 5. Run PyTorch SBD training
+ 
+```bash
+python training/train.py --mode sbd --steps 5000
+```
+ 
+### 6. Validate MiniTorch model
+ 
+```bash
+python project/run_machine_translation.py --use-fused-kernel False --samples_per_epoch 256
 ```
 
 ## Running
@@ -139,10 +163,10 @@ To keep our implementation modular and easy to debug, the repository is split in
 - [ ] Next steps: EB sampler, KV-cache, MiniTorch port in Week 6–7 (~0.5h)
 - [ ] Polish + submit (~1h) -->
 
-### Risks
+<!-- ### Risks
 - **Doubled sequence length mismatch**: `input_ids` fed to model must be `2 * seq_len` in SBD mode — easy to get shape wrong
 - **`input_ids_mask` semantics**: be explicit — `True` = token is masked (replaced with `[MASK]`), `False` = token is clean
-- **Loss label alignment**: `compute_sbd_loss()` handles its own label construction — do not also construct labels in `dataset.py` or `train.py`
+- **Loss label alignment**: `compute_sbd_loss()` handles its own label construction — do not also construct labels in `dataset.py` or `train.py` -->
 
 <!-- ### After Midterm
 - [ ] `eb_sampler.py`: Entropy Bounded Sampler
@@ -155,9 +179,22 @@ To keep our implementation modular and easy to debug, the repository is split in
 - [x] **Signal**: MATP loss drops below 5.0
 
 ### Step 4 — MiniTorch Model Modification (~2h)
-- [ ] Add an optional `mask` parameter to `MultiHeadAttention.self_attention`, `MultiHeadAttention.forward`, `TransformerLayer.forward`, and `DecoderLM.forward` in `modules_transfomer.py` so an external SBD attention mask can be injected at inference time (~1h)
-- [ ] Verify that calling these functions without a mask argument produces bit-identical outputs to the original implementation (~1h)
-- [ ] **Signal**: the existing machine translation training run completes with no change in loss
+- [x] Add an optional `mask` parameter to `MultiHeadAttention.self_attention`, `MultiHeadAttention.forward`, `TransformerLayer.forward`, and `DecoderLM.forward` in `modules_transfomer.py` so an external SBD attention mask can be injected at inference time (~1h)
+- [x] Verify that calling these functions without a mask argument produces bit-identical outputs to the original implementation (~1h)
+- [x] **Signal**: the existing machine translation training run completes with no change in loss
+<!-- {
+    "data_size": {
+        "train": 97976,
+        "validation": 4512,
+        "test": 100
+    }
+}
+[00:00:00] Pre-processing sequences       ███████████████████████████████████████████████████████████████████████████████ 0        /        0
+[00:00:00] Tokenize words                 ███████████████████████████████████████████████████████████████████████████████ 87929    /    87929
+[00:00:00] Count pairs                    ███████████████████████████████████████████████████████████████████████████████ 87929    /    87929
+[00:00:00] Compute merges                 ███████████████████████████████████████████████████████████████████████████████ 9741     /     9741
+Training (epoch 0 / 1): 100%|████████████████████████████████████████| 2/2 [01:01<00:00, 30.77s/it, loss=9.05, lr=0.0005, tokens_per_sec=170] -->
+
 
 ### Step 5 — MiniTorch Inference Components (~5h)
 - [ ] `inference/sbd_mask.py`: implement `build_sbd_inference_mask` — positions before `causal_point` attend causally, positions in the prediction block attend to all positions, output as a 4D MiniTorch tensor (~1h)
