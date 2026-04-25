@@ -117,8 +117,8 @@ To keep our implementation modular and easy to debug, the repository is split in
   * **Core Functions:** `entropy_bounded_sample()`
   * Implements the Entropy Bounded (EB) Sampler. It calculates the marginal entropy of the predicted tokens and unmasks them based on the $\gamma$ threshold (Equation 8).
 * **`generate.py`**
-  * **Core Functions:** `generate()` (Algorithm 2 Set Block Decoding inference), `sample_block()` (Algorithm 3 Sample block).
-  * The decoding loop. Manages the KV-cache updates for both causal and bidirectional tokens while generating text block by block.
+  * **Core Functions:** `generate_ntp()`, `generate_sbd()` (Algorithm 2), `sample_block()` (Algorithm 3)
+  * The decoding loop. `generate_ntp` runs standard one-token-at-a-time decoding and serves as the NTP baseline. `generate_sbd` advances by `block_size` positions at a time, calling `sample_block` for each block until all positions are unmasked. The number of forward passes per block is tracked for NFE reporting.
 * **`sbd_mask.py`**
   * **Core Functions:** `build_sbd_inference_mask()`
   * Builds the 4D attention mask used during block decoding at inference time. Tokens up to `causal_point` attend causally. Tokens from `causal_point` onward form the current prediction block and attend to all positions, following Figure 10 of the paper. Output is a MiniTorch tensor compatible with the modified `DecoderLM.forward()`.
@@ -197,10 +197,10 @@ Training (epoch 0 / 1): 100%|█████████████████
 
 
 ### Step 5 — MiniTorch Inference Components (~5h)
-- [ ] `inference/sbd_mask.py`: implement `build_sbd_inference_mask` — positions before `causal_point` attend causally, positions in the prediction block attend to all positions, output as a 4D MiniTorch tensor (~1h)
-- [ ] `inference/eb_sampler.py`: implement `entropy_bounded_sample` — compute per-position entropy for all masked positions, sort ascending, unmask the largest group whose cumulative entropy stays within γ, guarantee at least one token revealed per call (~2h)
-- [ ] `inference/generate.py`: implement `generate_ntp` for one-token-at-a-time decoding, `generate_sbd` for the outer block-level loop, and `sample_block` for the inner unmasking loop, tracking forward pass count per block for NFE reporting (~2h)
-- [ ] **Signal**: `generate_ntp` produces readable text and average NFE per block in `generate_sbd` is less than `block_size`
+- [x] `inference/sbd_mask.py`: implement `build_sbd_inference_mask` — positions before `causal_point` attend causally, positions in the prediction block attend to all positions, output as a 4D MiniTorch tensor (~1h)
+- [x] `inference/eb_sampler.py`: implement `entropy_bounded_sample` — compute per-position entropy for all masked positions, sort ascending, unmask the largest group whose cumulative entropy stays within γ, guarantee at least one token revealed per call (~2h)
+- [x] `inference/generate.py`: implement `generate_ntp` for one-token-at-a-time decoding, `generate_sbd` for the outer block-level loop, and `sample_block` for the inner unmasking loop, tracking forward pass count per block for NFE reporting (~2h)
+- [x] **Signal**: `generate_ntp` produces readable text and average NFE per block in `generate_sbd` is less than `block_size`
 
 ### Step 6 — Benchmark (~3h)
 - [ ] `benchmark_sbd.py`: implement `run_benchmark` — run `generate_ntp` and `generate_sbd` on the same model and prompt set, collect NFE speedup and wall-clock speedup at γ = 0.1, 0.35, and 0.6 (~2h)

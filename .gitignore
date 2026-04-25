@@ -9,3 +9,4 @@ __pycache__/
 *.so
 minitorch.egg-info/
 workdir_*/
+*.so
