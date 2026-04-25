@@ -203,7 +203,8 @@ Training (epoch 0 / 1): 100%|█████████████████
 - [x] **Signal**: `generate_ntp` produces readable text and average NFE per block in `generate_sbd` is less than `block_size`
 
 ### Step 6 — Benchmark (~3h)
-- [ ] `benchmark_sbd.py`: implement `run_benchmark` — run `generate_ntp` and `generate_sbd` on the same model and prompt set, collect NFE speedup and wall-clock speedup at γ = 0.1, 0.35, and 0.6 (~2h)
+- [x] `benchmark_sbd.py`: implement `run_benchmark` — run `generate_ntp` and `generate_sbd` on the same model and prompt set, collect NFE speedup and wall-clock speedup at γ = 0.1, 0.35, and 0.6 (~2h)
+- [ ] Add KV-cache to MiniTorch inference to improve wall-clock speedup (~3h)
 - [ ] Compare collected results against the Roofline analysis in Table 3 and Table 4 of the paper (~1h)
 - [ ] **Signal**: NFE reduction of 2x or more at γ = 0.35 with no significant drop in output quality
 
