@@ -121,15 +121,20 @@ class FeedForward(Module):
 
 
 class TransformerLayer(Module):
-    def __init__(self, n_embd: int, n_head: int, p_dropout: float=0.1, ln_eps: float=1e-8, bias: bool=True, backend: TensorBackend=None, use_fused_kernel: bool=False):
+    def __init__(self, n_embd: int, n_head: int, p_dropout: float=0.1, ln_eps: float=1e-8, bias: bool=True, backend: TensorBackend=None, use_fused_kernel: bool=False, ffn_dim=None):
         super().__init__()
         self.attention = MultiHeadAttention(
             n_embd, n_head, causal=True, p_dropout=p_dropout,
             bias=bias, backend=backend, use_fused_kernel=use_fused_kernel
         )
         self.ff = FeedForward(
-            n_embd, p_dropout=p_dropout, bias=bias, backend=backend
+            n_embd, 
+            middle_dim=ffn_dim if ffn_dim else 4 * n_embd,
+            p_dropout=p_dropout, bias=bias, backend=backend
         )
+        # self.ff = FeedForward(
+        #     n_embd, p_dropout=p_dropout, bias=bias, backend=backend
+        # )
         self.use_fused_kernel = use_fused_kernel
 
         if not self.use_fused_kernel:
@@ -172,6 +177,7 @@ class DecoderLM(Module):
         n_embd: int,
         n_head: int,
         n_positions: int,
+        n_layer: int = 4,
         p_dropout: float=0.1,
         ln_eps: float=1e-5,
         bias: bool=True,
@@ -187,13 +193,16 @@ class DecoderLM(Module):
         self.token_embeddings    = Embedding(n_vocab, n_embd, backend=backend)
         self.position_embeddings = Embedding(n_positions, n_embd, backend=backend)
 
-        self.t_layer_1 = TransformerLayer(n_embd, n_head, p_dropout, ln_eps, bias, backend, use_fused_kernel)
-        self.t_layer_2 = TransformerLayer(n_embd, n_head, p_dropout, ln_eps, bias, backend, use_fused_kernel)
-        self.t_layer_3 = TransformerLayer(n_embd, n_head, p_dropout, ln_eps, bias, backend, use_fused_kernel)
-        self.t_layer_4 = TransformerLayer(n_embd, n_head, p_dropout, ln_eps, bias, backend, use_fused_kernel)
+        # self.t_layer_1 = TransformerLayer(n_embd, n_head, p_dropout, ln_eps, bias, backend, use_fused_kernel)
+        # self.t_layer_2 = TransformerLayer(n_embd, n_head, p_dropout, ln_eps, bias, backend, use_fused_kernel)
+        # self.t_layer_3 = TransformerLayer(n_embd, n_head, p_dropout, ln_eps, bias, backend, use_fused_kernel)
+        # self.t_layer_4 = TransformerLayer(n_embd, n_head, p_dropout, ln_eps, bias, backend, use_fused_kernel)
+        for i in range(1, n_layer + 1):
+            setattr(self, f"t_layer_{i}", TransformerLayer(n_embd, n_head, p_dropout, ln_eps, bias, backend, use_fused_kernel, ffn_dim=4 * n_embd))
 
         self.dropout = Dropout(p_dropout)
         self.lm_head = Linear(n_embd, n_vocab, bias=bias, backend=backend)
+        self.n_layer = n_layer
 
         if not self.use_fused_kernel:
             self.ln = LayerNorm1d(n_embd, eps=ln_eps, backend=backend)
@@ -218,10 +227,12 @@ class DecoderLM(Module):
 
         x = self.dropout(tok_emb + pos_emb)
 
-        x = self.t_layer_1(x, mask=mask)
-        x = self.t_layer_2(x, mask=mask)
-        x = self.t_layer_3(x, mask=mask)
-        x = self.t_layer_4(x, mask=mask)
+        # x = self.t_layer_1(x, mask=mask)
+        # x = self.t_layer_2(x, mask=mask)
+        # x = self.t_layer_3(x, mask=mask)
+        # x = self.t_layer_4(x, mask=mask)
+        for i in range(1, self.n_layer + 1):
+            x = getattr(self, f"t_layer_{i}")(x, mask=mask)
 
         if not self.use_fused_kernel:
             x = self.ln(x)
