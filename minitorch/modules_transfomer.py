@@ -73,9 +73,9 @@ class MultiHeadAttention(Module):
         """
         batch_size, num_head, queries_len, q_dim = q.shape
 
-        # Extract numpy from current kT and v
-        kT_np = _to_numpy(kT._tensor._storage).reshape(batch_size, num_head, q_dim, queries_len)
-        v_np  = _to_numpy(v._tensor._storage).reshape(batch_size, num_head, queries_len, q_dim)
+        # Extract numpy from current kT and v (.contiguous() ensures correct memory layout after permute)
+        kT_np = _to_numpy(kT.contiguous()._tensor._storage).reshape(batch_size, num_head, q_dim, queries_len)
+        v_np  = _to_numpy(v.contiguous()._tensor._storage).reshape(batch_size, num_head, queries_len, q_dim)
 
         # Concatenate with past cache if provided
         if past_kv is not None:
