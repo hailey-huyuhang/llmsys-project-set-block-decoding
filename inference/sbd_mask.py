@@ -21,9 +21,10 @@ def build_sbd_inference_mask(
     """
     NEG_INF = -np.finfo(np.float32).max
     mask = np.zeros((batch_size, n_head, seq_len, seq_len), dtype=np.float32)
-
-    for q in range(causal_point):
-        for k in range(q + 1, seq_len):
-            mask[:, :, q, k] = NEG_INF
-
+    # causal region: q < causal_point, block future positions
+    if causal_point > 0:
+        q_idx = np.arange(causal_point)
+        k_idx = np.arange(seq_len)
+        future = k_idx[None, :] > q_idx[:, None]  # (causal_point, seq_len)
+        mask[:, :, :causal_point, :] = np.where(future, NEG_INF, 0.0)
     return tensor_from_numpy(mask, backend=backend)

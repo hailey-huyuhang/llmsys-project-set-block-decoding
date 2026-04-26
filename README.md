@@ -202,7 +202,7 @@ Training (epoch 0 / 1): 100%|█████████████████
 - [x] `inference/generate.py`: implement `generate_ntp` for one-token-at-a-time decoding, `generate_sbd` for the outer block-level loop, and `sample_block` for the inner unmasking loop, tracking forward pass count per block for NFE reporting (~2h)
 - [x] **Signal**: `generate_ntp` produces readable text and average NFE per block in `generate_sbd` is less than `block_size`
 
-### Step 6 — Benchmark (~3h)
+### Step 6 — Benchmark (~6h)
 - [x] `benchmark_sbd.py`: implement `run_benchmark` — run `generate_ntp` and `generate_sbd` on the same model and prompt set, collect NFE speedup and wall-clock speedup at γ = 0.1, 0.35, and 0.6 (~2h)
 - [ ] Add KV-cache to MiniTorch inference to improve wall-clock speedup (~3h)
 - [ ] Compare collected results against the Roofline analysis in Table 3 and Table 4 of the paper (~1h)
