@@ -26,7 +26,7 @@ def generate_ntp(
     NTP decoding with KV-cache. Prefills the prompt once, then generates
     one token at a time using cached K/V from all previous positions.
 
-    Returns the full token sequence and total NFE (== max_new_tokens + 1).
+    Returns the full token sequence and total NFE (== max_new_tokens).
     """
     tokens = list(prompt)
     vocab_size = model.n_vocab
@@ -118,58 +118,39 @@ def sample_block(
     seq_len = causal_point + block_size
     n_head = model.t_layer_1.attention.n_head
     vocab_size = model.n_vocab
+    past_kvs_history = past_kvs
 
     block = [mask_token_id] * block_size
     masked_positions = list(range(block_size))
     nfe = 0
-    first_iter = True
 
-    while masked_positions:
-        current_seq = tokens + block
-
-        if first_iter and past_kvs is not None:
-            block_idx = tensor_from_numpy(
-                np.array([block], dtype=np.float32), backend=backend
-            )
-            full_mask = build_sbd_inference_mask(
-                causal_point=causal_point,
-                seq_len=causal_point + block_size,
-                n_head=n_head,
-                batch_size=1,
-                backend=backend,
-            )
-            mask_np = _to_numpy(full_mask._tensor._storage).reshape(
-                1, n_head, causal_point + block_size, causal_point + block_size
-            )
-            mask_block_np = mask_np[:, :, causal_point:, :]
-            mask_block = tensor_from_numpy(mask_block_np, backend=backend)
-            
-            logits, new_kvs = model(
-                block_idx, mask=mask_block, past_kvs=past_kvs, offset=causal_point
-            )
-            raw = _to_numpy(logits._tensor._storage).reshape(1, block_size, vocab_size)
-            first_iter = False
-        else:
-            # Subsequent forwards within the block: pass full sequence
-            full_idx = tensor_from_numpy(
-                np.array([current_seq], dtype=np.float32), backend=backend
-            )
-            mask = build_sbd_inference_mask(
+    full_mask = build_sbd_inference_mask(
                 causal_point=causal_point,
                 seq_len=seq_len,
                 n_head=n_head,
                 batch_size=1,
                 backend=backend,
-            )
-            logits, new_kvs = model(
-                full_idx, mask=mask, past_kvs=None, offset=0
-            )
-            raw = _to_numpy(logits._tensor._storage).reshape(1, seq_len, vocab_size)
-            raw = raw[:, causal_point:, :]   # only block positions
+    )
+    
+    mask_np = _to_numpy(full_mask._tensor._storage).reshape(
+        1, n_head, causal_point + block_size, causal_point + block_size
+    )
+
+    mask_block = tensor_from_numpy(mask_np[:, :, causal_point:, :], backend=backend)
+
+    while masked_positions:
+        block_idx = tensor_from_numpy(
+            np.array([block], dtype=np.float32), backend=backend
+        )
+        
+        logits, _ = model(
+            block_idx, mask=mask_block, past_kvs=past_kvs_history, offset=causal_point
+        )
 
         nfe += 1
 
-        block_logits   = raw[0]                          # (block_size, vocab)
+        raw = _to_numpy(logits._tensor._storage).reshape(1, block_size, vocab_size)
+        block_logits = raw[0]                          # (block_size, vocab)
         masked_logits  = block_logits[masked_positions]  # (n_masked, vocab)
 
         chosen_rel, chosen_tokens = entropy_bounded_sample(
@@ -180,5 +161,13 @@ def sample_block(
             block[rel_pos] = token_id
 
         masked_positions = [p for p in masked_positions if p not in chosen_rel]
+    
+        # One final forward to get the full history+block KV-cache for the next block
+    block_idx = tensor_from_numpy(
+        np.array([block], dtype=np.float32), backend=backend
+    )
+    _, final_kvs = model(
+        block_idx, mask=mask_block, past_kvs=past_kvs_history, offset=causal_point
+    )
 
-    return tokens + block, new_kvs, nfe
+    return tokens + block, final_kvs, nfe

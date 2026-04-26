@@ -57,8 +57,10 @@ python training/train.py --mode baseline --steps 100
 # SBD training
 python training/train.py --mode sbd --steps 2000 --block_len 4
 
-# Benchmark
+# Benchmark (recommended: block_size=8 for better wall-clock speedup)
 python benchmark_sbd.py
+python benchmark_sbd.py --npz checkpoints/sbd_minitorch.npz \
+    --max_new_tokens 32 --block_size 8 --n_prompts 5
 ```
 
 Key arguments for `train.py`:
