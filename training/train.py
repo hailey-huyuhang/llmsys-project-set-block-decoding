@@ -9,6 +9,7 @@
 # loss.backward()
 
 import argparse
+import random
 import torch
 from transformers import GPT2LMHeadModel
 from torch.optim import AdamW
@@ -109,18 +110,20 @@ def main(args):
                 wandb.log({"ntp_loss": loss.item()}, step=step)
     
             elif args.mode == "sbd":
+                block_len = random.randint(args.block_len_min, args.block_len_max)
                 total_loss, ntp_loss, matp_loss = train_step_sbd(
-                    model, batch, mask_token_id, args.block_len, device
+                    model, batch, mask_token_id, block_len, device
                 )
                 total_loss.backward()
                 print(
-                    f"Step {step:4d} | total: {total_loss.item():.4f}  "
+                    f"Step {step:4d} | block_len: {block_len}  total: {total_loss.item():.4f}  "
                     f"ntp: {ntp_loss.item():.4f}  matp: {matp_loss.item():.4f}"
                 )
                 wandb.log({
                     "total_loss": total_loss.item(),
                     "ntp_loss": ntp_loss.item(),
                     "matp_loss": matp_loss.item(),
+                    "block_len": block_len,
                 }, step=step)
     
             optimizer.step()
@@ -137,6 +140,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--steps", type=int, default=100)
-    parser.add_argument("--block_len", type=int, default=4)
+    parser.add_argument("--block_len_min", type=int, default=2)
+    parser.add_argument("--block_len_max", type=int, default=16)
     args = parser.parse_args()
     main(args)

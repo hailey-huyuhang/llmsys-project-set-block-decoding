@@ -17,6 +17,5 @@ python training/train.py \
     --steps 34000 \
     --seq_len 128 \
     --batch_size 8 \
-    --lr 3e-4 \
-    --block_len 4
+    --lr 3e-4
 echo "Done."
