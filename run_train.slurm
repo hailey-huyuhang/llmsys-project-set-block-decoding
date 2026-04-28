@@ -4,7 +4,7 @@
 #SBATCH --error=sbd_train_%j.err
 #SBATCH -A cis260009p
 #SBATCH --gres=gpu:1
-#SBATCH --time=12:00:00
+#SBATCH --time=6:00:00
 #SBATCH --partition=GPU-shared
 
 module load anaconda3
