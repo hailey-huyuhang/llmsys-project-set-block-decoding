@@ -1,0 +1,49 @@
+{
+  "prepared_date": "2026-10-12",
+  "repository": "hailey-huyuhang/llmsys-project-set-block-decoding",
+  "files": [
+    {
+      "path": "reports/final-report.pdf",
+      "source": "https://canvas.cmu.edu/courses/51352/assignments/947937/submissions/141194",
+      "kind": "document",
+      "original_sha256": "df9934aaa56c13f25bb2659ce22ea846c0ac98cfa5a2cf74625895ac8b69d67e",
+      "sha256": "df9934aaa56c13f25bb2659ce22ea846c0ac98cfa5a2cf74625895ac8b69d67e",
+      "original_git_blob": "bb8aa4a6b9a5aefbbb8fea965780e7278f092664",
+      "git_blob": "bb8aa4a6b9a5aefbbb8fea965780e7278f092664",
+      "size": 6649501,
+      "redactions": 0,
+      "notebook_outputs_retained": null,
+      "original_existing_paths": []
+    },
+    {
+      "path": "reports/final-report.txt",
+      "source": "https://canvas.cmu.edu/courses/51352/assignments/947937/submissions/141194",
+      "kind": "readable report",
+      "original_sha256": "033b819edd3bc2f8c3761419361936cb8067d7d310f4919b9553b4af7a271271",
+      "sha256": "033b819edd3bc2f8c3761419361936cb8067d7d310f4919b9553b4af7a271271",
+      "original_git_blob": "24ad7c16d491f8eeb16667f97268e39d31aaf554",
+      "git_blob": "24ad7c16d491f8eeb16667f97268e39d31aaf554",
+      "size": 20102,
+      "redactions": 0,
+      "notebook_outputs_retained": null,
+      "original_existing_paths": []
+    },
+    {
+      "path": "STUDY_INDEX.md",
+      "source": "Prepared from the source records above",
+      "kind": "study index",
+      "original_sha256": "ce544968051dba25f4e5edbc3b008fc9b4765f6fbc5124c7d438999b79b96232",
+      "sha256": "ce544968051dba25f4e5edbc3b008fc9b4765f6fbc5124c7d438999b79b96232",
+      "original_git_blob": "70f63710fba252e914eaa10fddb9af967ed28b72",
+      "git_blob": "70f63710fba252e914eaa10fddb9af967ed28b72",
+      "size": 691,
+      "redactions": 0,
+      "notebook_outputs_retained": null,
+      "original_existing_paths": []
+    }
+  ],
+  "already_present": [],
+  "notes": [
+    "This is the actual Canvas final submission. All seven page text and content streams match the supplied Overleaf export; PDF metadata differs."
+  ]
+}

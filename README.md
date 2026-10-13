@@ -214,3 +214,7 @@ Training (epoch 0 / 1): 100%|█████████████████
 - **Regression in `modules_transfomer.py`**: confirm the modified file is numerically identical to the original when no mask is passed before moving on to inference work
 - **Missing MiniTorch ops**: `entropy_bounded_sample` may rely on operations not available in MiniTorch; use numpy for entropy computation as a fallback if needed
 - **NFE vs wall-clock gap**: without KV-cache, wall-clock speedup will be smaller than NFE speedup; report both metrics and compare against the paper's Roofline bounds
+
+## Study materials
+
+[Course reports, final submissions and source provenance](STUDY_INDEX.md).
