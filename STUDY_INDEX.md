@@ -4,6 +4,8 @@
 
 ## 本次补充
 
+- [项目海报（PDF）](reports/poster.pdf) — 2026-11-14 补充的原始课程海报，保留原作者与实验说明。
+
 - [reports/final-report.pdf](reports/final-report.pdf) — document
 - [reports/final-report.txt](reports/final-report.txt) — readable report
 

@@ -1,5 +1,7 @@
 # Set Block Decoding (SBD) Reproduction
 
+[Poster (PDF)](reports/poster.pdf) · [Final report (PDF)](reports/final-report.pdf)
+
 Welcome to our reproduction repository for the paper: **[Set Block Decoding is a Language Model Inference Accelerator](https://arxiv.org/abs/2509.04185)**.
 
 This project aims to implement a miniTorch version of the SBD methodology. SBD is a decoding paradigm that enables parallel sampling of non-contiguous future token blocks without altering the underlying Transformer architecture. By using a hybrid attention mechanism—causal for historical tokens and bidirectional for the future block—the model can predict multiple future tokens simultaneously.

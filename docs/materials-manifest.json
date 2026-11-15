@@ -40,6 +40,18 @@
       "redactions": 0,
       "notebook_outputs_retained": null,
       "original_existing_paths": []
+    },
+    {
+      "path": "reports/poster.pdf",
+      "source": "Author-provided original CMU 11868 poster export: llmsys_poster (1).pdf",
+      "kind": "course project poster",
+      "added_date": "2026-11-14",
+      "original_sha256": "5fdadbe7120b729900aaac1881f214c9a8badc08a4d00ced1fea92a48210b00c",
+      "sha256": "5fdadbe7120b729900aaac1881f214c9a8badc08a4d00ced1fea92a48210b00c",
+      "original_git_blob": "29116388fca654941e71c7e47903714cc7a501c1",
+      "git_blob": "29116388fca654941e71c7e47903714cc7a501c1",
+      "size": 2698050,
+      "redactions": 0
     }
   ],
   "already_present": [],
