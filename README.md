@@ -1,6 +1,6 @@
 # Set Block Decoding (SBD) Reproduction
 
-[Poster (PDF)](reports/poster.pdf) · [Final report (PDF)](reports/final-report.pdf)
+The project poster is available at [reports/poster.pdf](reports/poster.pdf).
 
 Welcome to our reproduction repository for the paper: **[Set Block Decoding is a Language Model Inference Accelerator](https://arxiv.org/abs/2509.04185)**.
 
@@ -219,4 +219,4 @@ Training (epoch 0 / 1): 100%|█████████████████
 
 ## Study materials
 
-[Course reports, final submissions and source provenance](STUDY_INDEX.md).
+The final report is available at [reports/final-report.pdf](reports/final-report.pdf).
